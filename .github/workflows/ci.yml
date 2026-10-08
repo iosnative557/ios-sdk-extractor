@@ -1,0 +1,51 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - run: go vet ./...
+      - run: go test ./...
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - name: Build
+        env:
+          CGO_ENABLED: "0"
+          VERSION: ${{ github.ref_name }}
+        run: |
+          mkdir -p dist
+          for target in windows/amd64 windows/arm64 linux/amd64 linux/arm64 darwin/amd64 darwin/arm64; do
+            goos=${target%/*}; goarch=${target#*/}
+            ext=""; [ "$goos" = windows ] && ext=".exe"
+            name="ios-sdk-extractor-${VERSION}-${goos}-${goarch}"
+            GOOS=$goos GOARCH=$goarch go build -trimpath -ldflags "-s -w -X main.Version=${VERSION}" -o "dist/${name}/ios-sdk-extractor${ext}" .
+            cp LICENSE README.md "dist/${name}/"
+            (cd dist && zip -qr "${name}.zip" "${name}")
+          done
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip

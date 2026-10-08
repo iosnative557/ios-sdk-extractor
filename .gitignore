@@ -1,0 +1,5 @@
+/ios-sdk-extractor
+/ios-sdk-extractor.exe
+/sdkextracted/
+/dist/
+*.tmp
