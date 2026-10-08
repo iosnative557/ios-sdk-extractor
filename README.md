@@ -82,6 +82,25 @@ sdkextracted/
 Typical sizes for Xcode 27: toolchain 25 MB, iPhoneOS 46 MB, WatchOS 57 MB, AppleTVOS 47 MB,
 XROS 43 MB, MacOSX 139 MB.
 
+## Use as a Go library
+
+The extractor is also importable: package `extract` does everything the command does.
+
+```go
+import "github.com/iosnative557/ios-sdk-extractor/extract"
+
+products, err := extract.Run(extract.Options{
+    Xcode:    "Xcode_27.xip",   // Xcode.app directory or .xip file
+    Platform: "iphone",         // same syntax as -c
+    Output:   "sdkextracted",   // created if missing
+})
+for _, p := range products {
+    fmt.Println(p.Zip, p.Name, p.Version, p.Swift)
+}
+```
+
+Progress is reported through `log/slog`.
+
 ## License
 
 Apache License 2.0, see [LICENSE](LICENSE).

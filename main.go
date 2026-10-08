@@ -6,7 +6,7 @@ import (
 	"os"
 	"runtime/debug"
 
-	"github.com/iosnative557/ios-sdk-extractor/internal/extract"
+	"github.com/iosnative557/ios-sdk-extractor/extract"
 	"github.com/spf13/cobra"
 )
 
