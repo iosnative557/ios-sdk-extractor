@@ -79,6 +79,9 @@ sdkextracted/
 └── ...                      one <Platform>.platform.zip per selected platform
 ```
 
+Symbolic links are stored as standard zip symlink entries; `unzip` on macOS and Linux restores
+them as links.
+
 Typical sizes for Xcode 27: toolchain 25 MB, iPhoneOS 46 MB, WatchOS 57 MB, AppleTVOS 47 MB,
 XROS 43 MB, MacOSX 139 MB.
 

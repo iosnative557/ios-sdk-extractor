@@ -2,15 +2,12 @@ package extract
 
 import (
 	"archive/zip"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/fs"
 	"os"
 	"time"
 )
-
-const LinkPatchFileName = ".LinkPatch.json"
 
 type zipOut struct {
 	path string
@@ -20,7 +17,6 @@ type zipOut struct {
 
 	names  map[string]bool
 	parent map[string]dirMeta
-	links  map[string]string
 	done   bool
 }
 
@@ -30,7 +26,7 @@ type dirMeta struct {
 }
 
 func newZipOut(path string) *zipOut {
-	z := &zipOut{path: path, names: map[string]bool{}, parent: map[string]dirMeta{}, links: map[string]string{}}
+	z := &zipOut{path: path, names: map[string]bool{}, parent: map[string]dirMeta{}}
 	z.f, z.err = os.Create(path + ".tmp")
 	if z.err == nil {
 		z.zw = zip.NewWriter(z.f)
@@ -122,27 +118,39 @@ func (z *zipOut) file(name string, mode fs.FileMode, mtime time.Time, r io.Reade
 	return nil
 }
 
+// link writes a symlink the standard way: unix mode S_IFLNK in the external
+// attributes, the target path as the entry body.
 func (z *zipOut) link(name, target string, mtime time.Time) error {
 	if z.err != nil {
 		return z.err
 	}
+	if z.names[name] {
+		return fmt.Errorf("duplicate entry %s in %s", name, z.path)
+	}
 	if err := z.ensureParents(name, mtime); err != nil {
 		return err
 	}
-	z.links[name] = target
+	header := &zip.FileHeader{
+		Name:     name,
+		Method:   zip.Store,
+		Modified: mtime,
+		Flags:    0x800,
+	}
+	header.SetMode(fs.ModeSymlink | 0o777)
+	w, err := z.zw.CreateHeader(header)
+	if err != nil {
+		return err
+	}
+	if _, err := io.WriteString(w, target); err != nil {
+		return err
+	}
+	z.names[name] = true
 	return nil
 }
 
 func (z *zipOut) finish() error {
 	if z.err != nil {
 		return z.err
-	}
-	linksJSON, err := json.MarshalIndent(z.links, "", "    ")
-	if err != nil {
-		return err
-	}
-	if err := z.writeRaw(LinkPatchFileName, linksJSON); err != nil {
-		return err
 	}
 	if err := z.zw.Close(); err != nil {
 		return err
@@ -152,15 +160,6 @@ func (z *zipOut) finish() error {
 	}
 	z.done = true
 	return os.Rename(z.path+".tmp", z.path)
-}
-
-func (z *zipOut) writeRaw(name string, data []byte) error {
-	w, err := z.zw.CreateHeader(&zip.FileHeader{Name: name, Flags: 0x800})
-	if err != nil {
-		return err
-	}
-	_, err = w.Write(data)
-	return err
 }
 
 func (z *zipOut) abort() {
