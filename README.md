@@ -17,8 +17,8 @@ Two kinds of input are supported:
 ## Prebuilt SDK
 
 Don't want to download Xcode? [ios-sdk](https://github.com/iosnative557/ios-sdk) has
-[iPhoneOS.platform.zip](https://github.com/iosnative557/ios-sdk) and [toolchain.zip](https://github.com/iosnative557/ios-sdk) extracted with this tool (Xcode 27.0, iOS SDK
-27.0, Swift 6.4.0), with instructions for using them.
+[iPhoneOS.platform.zip](https://github.com/iosnative557/ios-sdk) and [toolchain.zip](https://github.com/iosnative557/ios-sdk) extracted with this tool (Xcode 27.1, iOS SDK
+27.1, Swift 6.4.0), with instructions for using them.
 
 ## Build
 
